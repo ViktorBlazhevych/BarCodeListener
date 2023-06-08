@@ -84,7 +84,7 @@ class _MyHomePageState extends State<MyHomePage> {
               TextField(
                 cursorColor: Colors.black,
                 decoration: getScanBarCodeTextFieldStyle(
-                    "enter code", () {
+                    "enter manual code", () {
                   searchCode(_scanTextFieldController.text);
                   FocusManager.instance.primaryFocus?.unfocus();
                 }),
