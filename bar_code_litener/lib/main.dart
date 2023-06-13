@@ -1,5 +1,7 @@
+import 'dart:async';
+
+import 'package:bar_code_litener/flutter_barcode_listener.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_barcode_listener/flutter_barcode_listener.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 
@@ -33,9 +35,11 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   String? _barcode;
+  String _debugStr = "";
   late bool visible;
   final _scanTextFieldController = TextEditingController();
   final _scanFocus = FocusNode();
+  final _scrollController = ScrollController();
   
   @override
   Widget build(BuildContext context) {
@@ -58,12 +62,18 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
                 key: Key('visible-detector-key'),
                 child: BarcodeKeyboardListener(
-                  bufferDuration: Duration(milliseconds: 200),
+                  bufferDuration: Duration(milliseconds: 1000),
                   onBarcodeScanned: (barcode) {
                     if (!visible) return;
                     print(barcode);
                     setState(() {
                       _barcode = barcode;
+                    });
+                  },
+                  onDebugBarcodeScanner: (str){
+                    setState(() {
+                      _debugStr += str;
+                      updateScroll();
                     });
                   },
                   child: Column(
@@ -103,7 +113,21 @@ class _MyHomePageState extends State<MyHomePage> {
                 controller: _scanTextFieldController,
                 textInputAction: TextInputAction.next,
               ),
-        
+              SizedBox( height: 28,),
+              new Expanded(
+              flex: 1,
+              child: new SingleChildScrollView(
+                controller: _scrollController,
+                scrollDirection: Axis.vertical,//.horizontal
+                child:
+                Text(_debugStr),
+              ),),
+
+              TextButton(onPressed: (){
+                setState(() {
+                      _debugStr = "";
+                    });
+              }, child: const Text("CLEAR DEBUG"))
             ],
           ),
         ),
@@ -118,6 +142,21 @@ class _MyHomePageState extends State<MyHomePage> {
       _barcode = text;
     }); 
   }
+
+  updateScroll() {
+    Timer(
+        Duration(milliseconds: 100),
+        () => _scrollController
+            .jumpTo(_scrollController.position.maxScrollExtent));
+
+
+    // var scrollPosition = _scrollController.position;
+    //   _scrollController.animateTo(
+    //     scrollPosition.maxScrollExtent,
+    //     duration: new Duration(milliseconds: 200),
+    //     curve: Curves.easeOut,
+    //   );
+  }
 }
 
 
@@ -128,7 +167,7 @@ InputDecoration getScanBarCodeTextFieldStyle(
       filled: true,
       enabledBorder: const OutlineInputBorder(
           gapPadding: 10,
-          borderSide: BorderSide(width: 1, color: Colors.blue),
+          borderSide: BorderSide(width: 1, color: Colors.grey),
           borderRadius: BorderRadius.all(Radius.circular(8))),
       focusedBorder: const OutlineInputBorder(
           gapPadding: 10,
