@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bar_code_litener/flutter_barcode_listener.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 
@@ -40,11 +41,17 @@ class _MyHomePageState extends State<MyHomePage> {
   final _scanTextFieldController = TextEditingController();
   final _scanFocus = FocusNode();
   final _scrollController = ScrollController();
+  FocusNode _textNode = new FocusNode();
+
+  String qrCodeText = "";
   
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        FocusScope.of(context).requestFocus(_textNode);
+      },
       child:  Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -61,7 +68,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   visible = info.visibleFraction > 0;
                 },
                 key: Key('visible-detector-key'),
-                child: BarcodeKeyboardListener(
+                child: 
+                
+                /*
+                BarcodeKeyboardListener(
                   bufferDuration: Duration(milliseconds: 1000),
                   onBarcodeScanned: (barcode) {
                     if (!visible) return;
@@ -76,7 +86,9 @@ class _MyHomePageState extends State<MyHomePage> {
                       updateScroll();
                     });
                   },
-                  child: Column(
+                  child: 
+                  */
+                  Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: <Widget>[
@@ -86,7 +98,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ],
                   ),
-                ),
+                //),
               ),
               SizedBox(
                 height: 48,
@@ -97,6 +109,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     "enter manual code", () {
                   searchCode(_scanTextFieldController.text);
                   FocusManager.instance.primaryFocus?.unfocus();
+                  FocusScope.of(context).requestFocus(_textNode);
                 }),
                 keyboardType: TextInputType.number,
                 onChanged: (text) {
@@ -126,8 +139,44 @@ class _MyHomePageState extends State<MyHomePage> {
               TextButton(onPressed: (){
                 setState(() {
                       _debugStr = "";
+                      qrCodeText = "";
                     });
-              }, child: const Text("CLEAR DEBUG"))
+              }, child: const Text("CLEAR DEBUG")),
+              // --------------------------------------------------------------
+              // --------------------------------------------------------------
+              RawKeyboardListener(
+                autofocus: true,
+                focusNode: _textNode,
+                onKey: (event) {
+                  _debugStr += ("event -> ${event.toString()}\n\n");
+                  _debugStr += ("event.data -> ${event.data}\n\n");
+                  _debugStr +=
+                            ("event.character -> ${event.character.toString()}\n\n");
+                  
+                  _debugStr += ("event.physicalKey.debugName -> ${event.physicalKey.debugName}\n\n");
+                  _debugStr +=
+                            ("event.logicalKey.keyId -> ${event.logicalKey.keyId}\n\n");
+                  _debugStr +=
+                            ("isKeyPressed(LogicalKeyboardKey.enter) -> ${event.isKeyPressed(LogicalKeyboardKey.enter)}\n\n");
+
+
+                  //print("RawKeyboardListener Event: -> $event");
+                  if (event is RawKeyDownEvent) {
+                    if (event.logicalKey.keyLabel.length == 1) {
+                      qrCodeText += event.logicalKey.keyLabel;
+                    } else if (event.logicalKey.keyLabel == 'Enter') {
+                      //print('Data received from the QR Code: $qrCodeText');
+                    }
+                  }
+
+                  setState(() {
+                          updateScroll();
+                        });
+
+
+                },
+                child: Text('$qrCodeText')
+              ),
             ],
           ),
         ),
