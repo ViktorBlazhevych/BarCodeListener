@@ -4,7 +4,7 @@ import 'package:bar_code_litener/flutter_barcode_listener.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-
+//import 'package:zebrascanner/zebrascanner.dart';
 
 void main() {
   runApp(MyApp());
@@ -36,159 +36,165 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   String? _barcode;
-  String _debugStr = "";
-  late bool visible;
+  String _tempBarcode = "";
   final _scanTextFieldController = TextEditingController();
   final _scanFocus = FocusNode();
-  final _scrollController = ScrollController();
-  FocusNode _textNode = new FocusNode();
+  // --------------------------------------------------------------
 
-  String qrCodeText = "";
+  String _debugStr = "";
+  final _scrollController = ScrollController();
   
   @override
+  void dispose() {
+    _scanFocus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-        FocusScope.of(context).requestFocus(_textNode);
-      },
-      child:  Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Add visiblity detector to handle barcode
-        // values only when widget is visible
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              VisibilityDetector(
-                onVisibilityChanged: (VisibilityInfo info) {
-                  visible = info.visibleFraction > 0;
-                },
-                key: Key('visible-detector-key'),
-                child: 
-                
-                /*
-                BarcodeKeyboardListener(
-                  bufferDuration: Duration(milliseconds: 1000),
-                  onBarcodeScanned: (barcode) {
-                    if (!visible) return;
-                    print(barcode);
-                    setState(() {
-                      _barcode = barcode;
-                    });
-                  },
-                  onDebugBarcodeScanner: (str){
-                    setState(() {
-                      _debugStr += str;
-                      updateScroll();
-                    });
-                  },
-                  child: 
-                  */
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      Text(
-                        _barcode == null ? 'SCAN BARCODE' : 'BARCODE: $_barcode',
-                        style: Theme.of(context).textTheme.headline5,
-                      ),
-                    ],
-                  ),
-                //),
-              ),
-              SizedBox(
-                height: 48,
-              ),
-              TextField(
-                cursorColor: Colors.black,
-                decoration: getScanBarCodeTextFieldStyle(
-                    "enter manual code", () {
-                  searchCode(_scanTextFieldController.text);
-                  FocusManager.instance.primaryFocus?.unfocus();
-                  FocusScope.of(context).requestFocus(_textNode);
-                }),
-                keyboardType: TextInputType.number,
-                onChanged: (text) {
-                  //searchCode(text);
-                },
-                onSubmitted: (text) {
-                  FocusManager.instance.primaryFocus?.unfocus();
-                  searchCode(text);
-                },
-                onEditingComplete: () {
-                  searchCode(_scanTextFieldController.text);
-                },
-                focusNode: _scanFocus,
-                controller: _scanTextFieldController,
-                textInputAction: TextInputAction.next,
-              ),
-              SizedBox( height: 28,),
-              new Expanded(
-              flex: 1,
-              child: new SingleChildScrollView(
-                controller: _scrollController,
-                scrollDirection: Axis.vertical,//.horizontal
-                child:
-                Text(_debugStr),
-              ),),
-
-              TextButton(onPressed: (){
-                setState(() {
-                      _debugStr = "";
-                      qrCodeText = "";
-                    });
-              }, child: const Text("CLEAR DEBUG")),
-              // --------------------------------------------------------------
-              // --------------------------------------------------------------
-              RawKeyboardListener(
-                autofocus: true,
-                focusNode: _textNode,
-                onKey: (event) {
-                  _debugStr += ("event -> ${event.toString()}\n\n");
-                  _debugStr += ("event.data -> ${event.data}\n\n");
-                  _debugStr +=
-                            ("event.character -> ${event.character.toString()}\n\n");
-                  
-                  _debugStr += ("event.physicalKey.debugName -> ${event.physicalKey.debugName}\n\n");
-                  _debugStr +=
-                            ("event.logicalKey.keyId -> ${event.logicalKey.keyId}\n\n");
-                  _debugStr +=
-                            ("isKeyPressed(LogicalKeyboardKey.enter) -> ${event.isKeyPressed(LogicalKeyboardKey.enter)}\n\n");
-
-
-                  //print("RawKeyboardListener Event: -> $event");
-                  if (event is RawKeyDownEvent) {
-                    if (event.logicalKey.keyLabel.length == 1) {
-                      qrCodeText += event.logicalKey.keyLabel;
-                    } else if (event.logicalKey.keyLabel == 'Enter') {
-                      //print('Data received from the QR Code: $qrCodeText');
-                    }
-                  }
-
-                  setState(() {
-                          updateScroll();
-                        });
-
-
-                },
-                child: Text('$qrCodeText')
-              ),
-            ],
+    return Builder(
+      builder: (context) {
+        return GestureDetector(
+          onTap: () {
+            reFocus();
+          },
+          child:  Scaffold(
+          appBar: AppBar(
+            title: Text(widget.title),
           ),
-        ),
-      ),
-    )
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                children: [
+                  Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: <Widget>[
+                          Text(
+                            _barcode == null ? 'SCAN BARCODE' : 'BARCODE: $_barcode',
+                            style: Theme.of(context).textTheme.headline5,
+                          ),
+                        ],
+                      ),
+                  SizedBox(
+                    height: 48,
+                  ),
+                  TextField(
+                    autofocus: true,
+                    cursorColor: Colors.black,
+                    decoration: getScanBarCodeTextFieldStyle(
+                        "enter manual code", () {
+                      searchCode(_scanTextFieldController.text);
+                    }),
+                    keyboardType: TextInputType.number,
+                    onChanged: (text) {
+                      searchCode(text);
+                    },
+                    onSubmitted: (text) {
+                      //FocusManager.instance.primaryFocus?.unfocus();
+                      //searchCode(text, isSubmitted: true);
+                      print("onSubmitted");
+                    },
+                    onEditingComplete: () {
+                      print("onEditingComplete");
+                      searchCode(_scanTextFieldController.text,
+                            isSubmitted: true);
+                    },
+                    focusNode: _scanFocus,
+                    controller: _scanTextFieldController,
+                    textInputAction: TextInputAction.search,
+                  ),
+                  SizedBox( height: 28,),
+                  new Expanded(
+                  flex: 1,
+                  child: new SingleChildScrollView(
+                    controller: _scrollController,
+                    scrollDirection: Axis.vertical,//.horizontal
+                    child:
+                    Text(_debugStr),
+                  ),),
+
+                  TextButton(onPressed: (){
+                    setState(() {
+                          _debugStr = "";
+                        });
+                  }, child: const Text("CLEAR DEBUG")),
+                  // --------------------------------------------------------------
+                  // --------------------------------------------------------------
+                  /*
+                  RawKeyboardListener(
+                    autofocus: true,
+                    focusNode: _textNode,
+                    onKey: (event) {
+                      _debugStr += ("event -> ${event.toString()}\n\n");
+                      _debugStr += ("event.data -> ${event.data}\n\n");
+                      _debugStr +=
+                                ("event.character -> ${event.character.toString()}\n\n");
+                      
+                      _debugStr += ("event.physicalKey.debugName -> ${event.physicalKey.debugName}\n\n");
+                      _debugStr +=
+                                ("event.logicalKey.keyId -> ${event.logicalKey.keyId}\n\n");
+                      _debugStr +=
+                                ("isKeyPressed(LogicalKeyboardKey.enter) -> ${event.isKeyPressed(LogicalKeyboardKey.enter)}\n\n");
+
+
+                      //print("RawKeyboardListener Event: -> $event");
+                      if (event is RawKeyDownEvent) {
+                        if (event.logicalKey.keyLabel.length == 1) {
+                          qrCodeText += event.logicalKey.keyLabel;
+                        } else if (event.logicalKey.keyLabel == 'Enter') {
+                          //print('Data received from the QR Code: $qrCodeText');
+                        }
+                      }
+
+                      setState(() {
+                              updateScroll();
+                            });
+                    },
+                    child: Text('$qrCodeText')
+                  ),
+                  */
+
+
+                ],
+              ),
+            ),
+          ),
+        )
+        );
+      }
     );
   }
-  
-  void searchCode(String text) {
-    print("searchCode : {$searchCode}");
+  void reFocus(){
+    if (!_scanFocus.hasFocus) {
+      FocusScope.of(context).requestFocus(_scanFocus);
+    }
+    SystemChannels.textInput.invokeMapMethod("TextInput.hide");
+
+    print(FocusScope.of(context).children);
+    print(_scanFocus.hasFocus);
+  }
+
+  void searchCode(String text, {bool isSubmitted = false}) {
+    if ((_tempBarcode.length - text.length).abs() == 1 || text.isEmpty) {
+      _tempBarcode = text;
+      return;
+    } else {
+      _tempBarcode = "";
+      _scanTextFieldController.text = "";
+
+        Future.delayed(const Duration(milliseconds: 100), () {
+          reFocus();
+        });
+
+      print("searchCode() =>  {$text}");
+    }
+
+
+    // debug
     setState(() {
-      _barcode = text;
+      _debugStr += ("searchCode() =>  {$text}\n");
     }); 
   }
 
@@ -206,8 +212,6 @@ class _MyHomePageState extends State<MyHomePage> {
     //     curve: Curves.easeOut,
     //   );
   }
-}
-
 
 InputDecoration getScanBarCodeTextFieldStyle(
     String hintText, Function? action) {
@@ -260,4 +264,8 @@ Widget getInputButton(Function? action) {
       ),
     );
   });
+
+  // --------------------------------------------------------------
+  // --------------------------------------------------------------
+}
 }
